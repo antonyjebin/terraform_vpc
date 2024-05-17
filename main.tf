@@ -65,22 +65,26 @@ resource "aws_route_table" "EKS_Public_RouteTable" {
 }
 
 #associate route table with public route table
-resource "aws_route_table_association" "EKS_RouteTable_Association" {
+resource "aws_route_table_association" "EKS_Public_RouteTable_Association" {
   subnet_id      = aws_subnet.EKS_Public_Subnet.id
   route_table_id = aws_route_table.EKS_Public_RouteTable.id
 }
 
+resource "aws_eip" "EKS_ElasticIP" {
+  domain   = "vpc"
+  tags = {
+    Name = "EKS_ElasticIP"
+  }
+}
+
+#create NAT gateway
 resource "aws_nat_gateway" "EKS_NAT" {
-  allocation_id = aws_eip.example.id
-  subnet_id     = aws_subnet.example.id
+  allocation_id = aws_eip.EKS_ElasticIP.id
+  subnet_id     = aws_subnet.EKS_Public_Subnet.id
 
   tags = {
     Name = "EKS_NAT"
   }
-
-  # To ensure proper ordering, it is recommended to add an explicit dependency
-  # on the Internet Gateway for the VPC.
-  depends_on = [aws_internet_gateway.example]
 }
 
 #create route table for private subnet
@@ -89,11 +93,19 @@ resource "aws_route_table" "EKS_Private_RouteTable" {
 
   route {
     cidr_block = "0.0.0.0/0"
+    gateway_id = aws_nat_gateway.EKS_NAT.id
+
   }
 
   tags = {
     Name = "EKS_Private_RouteTable"
   }
+}
+
+#create private route table association
+resource "aws_route_table_association" "EKS_Private_RouteTable_Association" {
+  subnet_id      = aws_subnet.EKS_Private_Subnet
+  route_table_id = aws_route_table.EKS_Private_RouteTable
 }
 
 
