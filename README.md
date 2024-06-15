@@ -1,4 +1,5 @@
-### Terraform VPC Creation Explanation ###
+### In this Repo I created VPC using Terraform ###
+Steps of creation VPC:
  1. Required Providers
  2. AWS Provider Configuration
  3. Create a VPC
